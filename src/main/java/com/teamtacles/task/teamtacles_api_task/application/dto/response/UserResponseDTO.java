@@ -1,4 +1,4 @@
-package com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response;
+package com.teamtacles.task.teamtacles_api_task.application.dto.response;
 
 import java.util.List;
 import java.util.Set;

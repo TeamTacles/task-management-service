@@ -1,4 +1,4 @@
-package com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response;
+package com.teamtacles.task.teamtacles_api_task.application.dto.response;
 
 import java.util.List;
 
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProjectResponseFilteredDTO {
+public class TaskProjectResponseFilteredDTO {
     @Schema(description = "The unique identifier of the project.", example = "1")
     private Long id;
 

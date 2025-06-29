@@ -1,13 +1,13 @@
-package com.teamtacles.task.teamtacles_api_task.infrastructure.dto.request;
+package com.teamtacles.task.teamtacles_api_task.application.dto.request;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.teamtacles.task.teamtacles_api_task.application.dto.response.UserResponseDTO;
 //import com.teamtacles.teamtacles_api.infrastructure.dto.response.ProjectResponseDTO;
 //import com.teamtacles.teamtacles_api.dto.response.UserResponseDTO;
 import com.teamtacles.task.teamtacles_api_task.domain.model.enums.Status;
-import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.UserResponseDTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

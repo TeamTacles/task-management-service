@@ -1,4 +1,4 @@
-package com.teamtacles.task.teamtacles_api_task.infrastructure.dto.request;
+package com.teamtacles.task.teamtacles_api_task.application.dto.request;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

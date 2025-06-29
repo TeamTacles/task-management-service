@@ -6,7 +6,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.PagedResponse;
+import com.teamtacles.task.teamtacles_api_task.application.dto.response.PagedResponse;
 
 @Component
 public class PagedResponseMapper {

@@ -17,17 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.PageRequest;
-
-import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.PagedResponse;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
-import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.request.TaskRequestDTO;
-import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.request.TaskRequestPatchDTO;
-import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.TaskResponseDTO;
-import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.TaskResponseFilteredDTO;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,6 +28,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 
+import com.teamtacles.task.teamtacles_api_task.application.dto.request.TaskRequestDTO;
+import com.teamtacles.task.teamtacles_api_task.application.dto.request.TaskRequestPatchDTO;
+import com.teamtacles.task.teamtacles_api_task.application.dto.response.PagedResponse;
+import com.teamtacles.task.teamtacles_api_task.application.dto.response.TaskResponseDTO;
+import com.teamtacles.task.teamtacles_api_task.application.dto.response.TaskResponseFilteredDTO;
 import com.teamtacles.task.teamtacles_api_task.application.service.TaskService;
 
 import jakarta.validation.Valid;
