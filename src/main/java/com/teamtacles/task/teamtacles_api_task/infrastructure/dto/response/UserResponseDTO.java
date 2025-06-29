@@ -11,8 +11,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-public class TaskUserResponseDTO{
+public class UserResponseDTO{
     @Schema(description = "The unique username of the user.", example = "jane.doe")
     private String userName;
 

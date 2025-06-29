@@ -5,9 +5,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.teamtacles.task.teamtacles_api_task.domain.model.Task;
+import com.teamtacles.task.teamtacles_api_task.domain.model.enums.Status;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.request.TaskRequestDTO;
+import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.request.TaskRequestPatchDTO;
+import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.PagedResponse;
+import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.ProjectResponseDTO;
+import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.UserResponseDTO;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.TaskResponseDTO;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.TaskResponseFilteredDTO;
+import com.teamtacles.task.teamtacles_api_task.infrastructure.exception.ResourceNotFoundException;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.mapper.PagedResponseMapper;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.repository.TaskRepository;
 
@@ -56,32 +63,33 @@ public class TaskService {
      * @param userFromToken The authenticated User who is creating the task.
      * @return A TaskResponseDTO representing the newly created task.
      */
-    public TaskResponseDTO createTask(Long id_project, TaskRequestDTO taskRequestDTO, Long userId) {        
-        Project project = findprojects(id_project);
-        User creatorUser = findUsers(userFromToken.getUserId());
+    public TaskResponseDTO createTask(Long id_project, TaskRequestDTO taskRequestDTO, Long userIdFromToken) {        
 
-        projectService.ensureUserCanViewProject(project, creatorUser);
+        ProjectResponseDTO projectDTO = projectServiceClient.getProjectById(id_project);
+        UserResponseDTO creatorUserDTO = userServiceClient.getUserById(userIdFromToken);
 
-        List<User> usersResponsability = new ArrayList<>();
+        List<Long> usersResponsabilityIds = new ArrayList<>();
         
-        for (Long userId : taskRequestDTO.getUsersResponsability()) {
-            usersResponsability.add(findUsers(userId));
+        for (Long responsibleId : taskRequestDTO.getUsersResponsability()) {
+            userServiceClient.getUserById(userIdFromToken);
+            usersResponsabilityIds.add(responsibleId);
         }
 
-        if (!usersResponsability.contains(creatorUser)) {
-            usersResponsability.add(creatorUser);
+        if (!usersResponsabilityIds.contains(userIdFromToken)) {
+            usersResponsabilityIds.add(userIdFromToken);
         }
         
         Task convertedTask = modelMapper.map(taskRequestDTO, Task.class);
-        convertedTask.setProject(project);
-        convertedTask.setOwner(creatorUser);
+        convertedTask.setProjectId(id_project);
+        convertedTask.setOwnerUserId(userIdFromToken);
         convertedTask.setStatus(Status.TODO);
-        convertedTask.setUsersResponsability(usersResponsability);
+        convertedTask.setResponsibleUserIds(usersResponsabilityIds);
 
         Task createdTask = taskRepository.save(convertedTask);
         return modelMapper.map(createdTask, TaskResponseDTO.class);
 	}
 
+    
     /**
      * Retrieves a single task by its ID within a specific project, ensuring the authenticated user has permission to view it.
      * The task must belong to the specified project.
@@ -92,14 +100,14 @@ public class TaskService {
      * @param userFromToken The authenticated User attempting to view the task.
      * @return A TaskResponseDTO representing the found task.
      */
-    public TaskResponseDTO getTasksById(Long id_project, Long id_task, Long userId){
+    public TaskResponseDTO getTasksById(Long id_project, Long id_task, Long userFromToken){
         Task task = taskRepository.findById(id_task) 
                 .orElseThrow(() -> new ResourceNotFoundException("Task Not Found."));
 
         ensureProjectMatchesTask(task, id_project);
 
         // Chama o método que verifica se o usuário é dono da tarefa ou se é um administrador
-        ensureUserCanAccessTask(task, userFromToken);
+        // ensureUserCanAccessTask(task, userFromToken);
         
         return modelMapper.map(task, TaskResponseDTO.class);
     }
@@ -181,12 +189,12 @@ public class TaskService {
      * @param userFromToken The authenticated User attempting to update the task.
      * @return A TaskResponseDTO representing the updated task.
      */
-    public TaskResponseDTO updateTask(Long id_project, Long id_task, TaskRequestDTO taskRequestDTO, Long userId) {
+    public TaskResponseDTO updateTask(Long id_project, Long id_task, TaskRequestDTO taskRequestDTO, Long userFromToken) {
         Task task = taskRepository.findById(id_task)
             .orElseThrow(() -> new ResourceNotFoundException("Task Not Found."));
         // Chama o método que verifica se o usuário é dono da tarefa ou se é um administrador
         ensureProjectMatchesTask(task, id_project);
-        ensureUserCanAccessTask(task, userFromToken);
+        // ensureUserCanAccessTask(task, userFromToken);
 
         List<User> usersResponsability = new ArrayList<>();
         
@@ -266,7 +274,8 @@ public class TaskService {
 
     // Validando se o usuário é dono do projeto, se ele não for adm/responsavel, ele não consegue criar, editar ou deletar tarefas de outros usuários
     private void ensureUserCanAccessTask(Task task, User user) {
-        boolean isResposible = task.getUsersResponsability().stream() 
+        boolean isResposible = task.getUsersResponsabi
+        lity().stream() 
             .anyMatch(resposible -> resposible.getUserId().equals(user.getUserId())); //verifica se o usuário é responsável pela tarefa
 
         if(!isADM(user) && !task.getOwner().getUserId().equals(user.getUserId()) && !isResposible) {
@@ -276,7 +285,7 @@ public class TaskService {
     
     // Verifica se o projeto da tarefa corresponde ao projeto fornecido
     private void ensureProjectMatchesTask(Task task, Long id_project){
-        if(!(task.getProject().getId() == id_project)){
+        if(!(task.getProjectId() == id_project)){
             throw new ResourceNotFoundException("Task does not belong to the specified project.");
         }
     }

@@ -30,10 +30,10 @@ public class TaskResponseFilteredDTO{
     private Status status;
 
     @Schema(description = "The user assigned as the primary owner/creator of the task.")
-    private TaskUserResponseDTO owner;
+    private UserResponseDTO owner;
 
     @Schema(description = "A list of users who are responsible for completing this task.", type = "array")
-    private List<TaskUserResponseDTO> usersResponsability;
+    private List<UserResponseDTO> usersResponsability;
     
     @Schema(description = "The project details associated with this task, potentially filtered.")
     private TaskProjectResponseFilteredDTO project;

@@ -7,7 +7,7 @@ import java.util.Optional;
 //import com.teamtacles.teamtacles_api.infrastructure.dto.response.ProjectResponseDTO;
 //import com.teamtacles.teamtacles_api.dto.response.UserResponseDTO;
 import com.teamtacles.task.teamtacles_api_task.domain.model.enums.Status;
-import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.TaskUserResponseDTO;
+import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.UserResponseDTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -30,7 +30,7 @@ public class TaskRequestPatchDTO {
     @Schema(description = "The new status for the task. If provided, the existing status will be updated. Allowed values are based on the Task Status enum.", example = "IN_PROGRESS") 
     private Optional<Status> status = Optional.empty();
 
-    private Optional<TaskUserResponseDTO> owner = Optional.empty();
+    private Optional<UserResponseDTO> owner = Optional.empty();
 
     // private Optional<ProjectResponseDTO> project = Optional.empty();
 

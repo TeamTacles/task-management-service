@@ -3,14 +3,16 @@ package com.teamtacles.task.teamtacles_api_task.domain.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.teamtacles.task.teamtacles_api_task.domain.model.enums.Status;
-import com.teamtacles.task.teamtacles_api_task.domain.model.valueObject.ProjectId;
+import com.teamtacles.task.teamtacles_api_task.domain.valueObject.Description;
+import com.teamtacles.task.teamtacles_api_task.domain.valueObject.DueDate;
+import com.teamtacles.task.teamtacles_api_task.domain.valueObject.OwnerUserId;
+import com.teamtacles.task.teamtacles_api_task.domain.valueObject.ProjectId;
+import com.teamtacles.task.teamtacles_api_task.domain.valueObject.ResponsiblesList;
+import com.teamtacles.task.teamtacles_api_task.domain.valueObject.TaskTitle;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -48,54 +50,24 @@ import lombok.NoArgsConstructor;
 public class Task {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private final Long id;
 
-    @Size(max = 50)
-	@NotBlank(message="The title cannot be blank!")
-    private String title; 
-
-    @Size(max = 250)
-    private String description;
+    private TaskTitle title; 
+    private Description description;
 
     @NotNull
     @Future(message="The due date must be in the future") 
     @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
-    private LocalDateTime dueDate;
+    private DueDate dueDate;
 
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    private Long ownerUserId;
+    private OwnerUserId ownerUserId;
 
-    private List<Long> responsibleUserIds;
+    private ResponsiblesList responsibleUserIds;
 
-     // NOVO: Projeto associado como ProjectId Value Object
-    @Embedded
-    @AttributeOverride(name = "value", column = @Column(name = "project_id", nullable = false)) // Mapeia o 'value' do ProjectId para a coluna 'project_id'
     private ProjectId projectId;
 
-    
-
-    /* 
-    antes:
-
-    // owner das tasks 
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false)
-    @JsonBackReference(value = "user-task")
-    private TaskUser owner;
-
-    // lista de responsabilidades
-    @ManyToMany
-    @JoinTable(name = "users_responsability", joinColumns = @JoinColumn(name = "task_id"), inverseJoinColumns = @JoinColumn(name = "userId"))
-    private List<TaskUser> usersResponsability;
-
-    // projetos que a task está associada
-    @NotNull
-    @ManyToOne(optional = false) // composição - temq pertencer a algum projeto
-    @JoinColumn(name = "project_id", nullable = false)
-    @JsonBackReference(value = "project-task")
-    private TaskProject project;
-    */
 }
+

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TaskProjectResponseDTO {
+public class ProjectResponseDTO {
     @Schema(description = "The unique identifier of the project.", example = "1")
     private Long id;
 
@@ -24,8 +24,8 @@ public class TaskProjectResponseDTO {
     private List<TaskResponseDTO> tasks;
 
     @Schema(description = "The user who created this project.")
-    private TaskUserResponseDTO creator;
+    private UserResponseDTO creator;
 
     @Schema(description = "A list of users who are part of this project's team.", type = "array")
-    private List<TaskUserResponseDTO> team;
+    private List<UserResponseDTO> team;
 }
