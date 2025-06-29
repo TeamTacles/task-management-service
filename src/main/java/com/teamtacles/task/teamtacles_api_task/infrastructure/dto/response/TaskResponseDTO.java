@@ -3,9 +3,7 @@ package com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.teamtacles.task.teamtacles_api_task.domain.model.TaskUser;
 import com.teamtacles.task.teamtacles_api_task.domain.model.enums.Status;
-import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.TaskUserResponseDTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

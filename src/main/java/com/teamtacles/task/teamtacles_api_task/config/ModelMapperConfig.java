@@ -1,4 +1,4 @@
-package com.teamtacles.task.teamtacles_api_task.infrastructure.config;
+package com.teamtacles.task.teamtacles_api_task.config;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;

@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class PagedResponse<T> {
+public class PagedResponse<T>{
     @Schema(description = "The list of elements for the current page.", type = "array")
 	private List<T> content;
 

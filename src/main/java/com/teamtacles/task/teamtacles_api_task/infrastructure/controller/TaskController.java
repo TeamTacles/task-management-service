@@ -19,10 +19,15 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.PageRequest;
 
 import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.PagedResponse;
+import org.springframework.security.oauth2.jwt.Jwt;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.request.TaskRequestDTO;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.request.TaskRequestPatchDTO;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.TaskResponseDTO;
+import com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response.TaskResponseFilteredDTO;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -68,9 +73,10 @@ public class TaskController {
     @PostMapping("/{id_project}/task")
     public ResponseEntity<TaskResponseDTO> createTask(@PathVariable("id_project") @Parameter(description = "Project ID") Long id_project, 
         @Valid @RequestBody @Parameter(description = "Details of the task to be created (title, description, due date).") TaskRequestDTO taskRequestDTO, 
-        @Parameter(hidden = true) @AuthenticationPrincipal UserAuthenticated authenticatedUser
+        @Parameter(hidden = true) @AuthenticationPrincipal Jwt authenticationToken
     ){
-        TaskResponseDTO taskResponseDTO = taskService.createTask(id_project, taskRequestDTO, authenticatedUser.getUser());
+        Long userIdFromToken = authenticationToken.getClaim("userId");
+        TaskResponseDTO taskResponseDTO = taskService.createTask(id_project, taskRequestDTO, userIdFromToken);
         return ResponseEntity.status(HttpStatus.CREATED).body(taskResponseDTO);
     }
 
@@ -95,9 +101,10 @@ public class TaskController {
     @GetMapping("/{id_project}/task/{id_task}")
     public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable("id_project") @Parameter(description = "Project ID") Long id_project, 
         @PathVariable("id_task") @Parameter(description = "Project Task") Long id_task,
-        @Parameter(hidden = true) @AuthenticationPrincipal UserAuthenticated authenticatedUser
+        @Parameter(hidden = true) @AuthenticationPrincipal Jwt authenticationToken
     ){
-        return ResponseEntity.ok(taskService.getTasksById(id_project, id_task, authenticatedUser.getUser()));
+        Long userIdFromToken = authenticationToken.getClaim("userId");
+        return ResponseEntity.ok(taskService.getTasksById(id_project, id_task, userIdFromToken));
     }  
 
     /**
@@ -123,9 +130,10 @@ public class TaskController {
     public ResponseEntity<PagedResponse<TaskResponseDTO>> getTasksByUserInProject(@PathVariable @Parameter(description = "Project ID") Long projectId, 
         @PathVariable @Parameter(description = "User ID") Long userId, 
         @Parameter(description = "Pagination parameters (page, size, sort).") Pageable pageable,
-        @Parameter(hidden = true) @AuthenticationPrincipal UserAuthenticated userFromToken
+        @Parameter(hidden = true) @AuthenticationPrincipal Jwt authenticationToken
     ){
-        PagedResponse<TaskResponseDTO> response = taskService.getAllTasksFromUserInProject(pageable, projectId, userId, userFromToken.getUser());
+        Long userIdFromToken = authenticationToken.getClaim("userId");
+        PagedResponse<TaskResponseDTO> response = taskService.getAllTasksFromUserInProject(pageable, projectId, userId, userIdFromToken);
         return ResponseEntity.ok(response);
     }
 
@@ -157,9 +165,10 @@ public class TaskController {
         @Parameter(description = "Filter tasks by dueDate") LocalDateTime dueDate,
         @RequestParam(value = "projectId", required = false) @Parameter(description = "Filter tasks by Project ID") Long projectId,
         @Parameter(description = "Pagination parameters (page, size, sort).") Pageable pageable, 
-        @Parameter(hidden = true) @AuthenticationPrincipal UserAuthenticated authenticatedUser
+        @Parameter(hidden = true) @AuthenticationPrincipal Jwt authenticationToken
     ){
-        PagedResponse tasksPage = taskService.getAllTasksFiltered(status, dueDate, projectId, pageable, authenticatedUser.getUser());
+        Long userIdFromToken = authenticationToken.getClaim("userId");
+        PagedResponse tasksPage = taskService.getAllTasksFiltered(status, dueDate, projectId, pageable, userIdFromToken);
         return ResponseEntity.status(HttpStatus.OK).body(tasksPage);
     }  
 
@@ -188,9 +197,10 @@ public class TaskController {
     public ResponseEntity<TaskResponseDTO> updateStatus(@PathVariable("id_project") @Parameter(description = "Project ID") Long id_project, 
         @PathVariable("id_task") @Parameter(description = "Task ID")Long id_task, 
         @Valid @RequestBody @Parameter(description = "Request body containing the new status for the task or other informations.") TaskRequestPatchDTO taskRequestPatchDTO, 
-        @Parameter(hidden = true) @AuthenticationPrincipal UserAuthenticated authenticatedUser
+        @Parameter(hidden = true) @AuthenticationPrincipal Jwt authenticationToken
     ){
-        TaskResponseDTO taskResponseDTO = taskService.updateStatus(id_project, id_task, taskRequestPatchDTO, authenticatedUser.getUser());
+        Long userIdFromToken = authenticationToken.getClaim("userId");
+        TaskResponseDTO taskResponseDTO = taskService.updateStatus(id_project, id_task, taskRequestPatchDTO, userIdFromToken);
         return ResponseEntity.status(HttpStatus.OK).body(taskResponseDTO);
     }
     
@@ -219,9 +229,10 @@ public class TaskController {
     public ResponseEntity<TaskResponseDTO> updateTask(@PathVariable("id_project") @Parameter(description = "Project ID") Long id_project, 
         @PathVariable("id_task") @Parameter(description = "Task ID") Long id_task, 
         @Valid @RequestBody @Parameter(description = "Complete updated details for the task.") TaskRequestDTO taskRequestDTO, 
-        @Parameter(hidden = true) @AuthenticationPrincipal UserAuthenticated authenticatedUser
+        @Parameter(hidden = true) @AuthenticationPrincipal Jwt authenticationToken
     ){
-        TaskResponseDTO taskResponseDTO = taskService.updateTask(id_project, id_task, taskRequestDTO, authenticatedUser.getUser());
+        Long userIdFromToken = authenticationToken.getClaim("userId");
+        TaskResponseDTO taskResponseDTO = taskService.updateTask(id_project, id_task, taskRequestDTO, userIdFromToken);
         return ResponseEntity.status(HttpStatus.OK).body(taskResponseDTO);
     }
 
@@ -245,9 +256,10 @@ public class TaskController {
     @DeleteMapping("/{id_project}/task/{id_task}")
     public ResponseEntity<Void> deleteTask(@PathVariable("id_project") @Parameter(description = "Project ID") Long id_project, 
         @PathVariable("id_task") @Parameter(description = "Task ID") Long id_task, 
-        @Parameter(hidden = true) @AuthenticationPrincipal UserAuthenticated authenticatedUser
+        @Parameter(hidden = true) @AuthenticationPrincipal Jwt authenticationToken
     ){
-        taskService.deleteTask(id_project, id_task, authenticatedUser.getUser());
+        Long userIdFromToken = authenticationToken.getClaim("userId");
+        taskService.deleteTask(id_project, id_task, userIdFromToken);
         return ResponseEntity.noContent().build();
     }
 }

@@ -3,7 +3,6 @@ package com.teamtacles.task.teamtacles_api_task.infrastructure.dto.response;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.teamtacles.task.teamtacles_api_task.domain.model.TaskUser;
 import com.teamtacles.task.teamtacles_api_task.domain.model.enums.Status;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -36,6 +35,6 @@ public class TaskResponseFilteredDTO{
     @Schema(description = "A list of users who are responsible for completing this task.", type = "array")
     private List<TaskUserResponseDTO> usersResponsability;
     
-    // @Schema(description = "The project details associated with this task, potentially filtered.")
-    // private ProjectResponseFilteredDTO project;
+    @Schema(description = "The project details associated with this task, potentially filtered.")
+    private TaskProjectResponseFilteredDTO project;
 }  
