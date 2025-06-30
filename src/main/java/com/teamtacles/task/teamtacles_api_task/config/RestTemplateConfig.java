@@ -14,10 +14,22 @@ public class RestTemplateConfig {
     @Value("${user-service.url}")
     private String userServiceBaseUrl;
 
+    @Value("${project-service.url}")
+    private String projectServiceBaseUrl;
+
     @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
+    public RestTemplate userServiceRestTemplate(RestTemplateBuilder builder) {
         return builder
                 .rootUri(userServiceBaseUrl)
+                .setConnectTimeout(Duration.ofSeconds(5))
+                .setReadTimeout(Duration.ofSeconds(10))
+                .build();
+    }
+
+    @Bean
+    public RestTemplate projectServiceRestTemplate(RestTemplateBuilder builder) {
+        return builder
+                .rootUri(projectServiceBaseUrl)
                 .setConnectTimeout(Duration.ofSeconds(5))
                 .setReadTimeout(Duration.ofSeconds(10))
                 .build();

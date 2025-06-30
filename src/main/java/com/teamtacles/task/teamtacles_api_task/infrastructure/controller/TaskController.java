@@ -38,7 +38,7 @@ import com.teamtacles.task.teamtacles_api_task.application.service.TaskService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/project")
+@RequestMapping("/api/task")
 public class TaskController {
         private final TaskService taskService;
 

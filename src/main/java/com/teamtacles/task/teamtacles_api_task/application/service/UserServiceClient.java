@@ -1,5 +1,6 @@
 package com.teamtacles.task.teamtacles_api_task.application.service;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -10,7 +11,7 @@ public class UserServiceClient {
 
     private final RestTemplate restTemplate;
 
-    public UserServiceClient(RestTemplate restTemplate){
+    public UserServiceClient(@Qualifier("userServiceRestTemplate") RestTemplate restTemplate){
         this.restTemplate = restTemplate;
     }
 
