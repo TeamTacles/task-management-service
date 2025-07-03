@@ -1,6 +1,10 @@
 package com.teamtacles.task.teamtacles_api_task.application.service;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -17,11 +21,24 @@ public class UserServiceClient {
         this.restTemplate = restTemplate;
     }
 
-    public UserResponseDTO getUserById(Long userId){
+    // Método corrigido para aceitar e usar o token
+    public UserResponseDTO getUserById(Long userId, String token){
         try{
-            return restTemplate.getForObject("api/user/{userId}", UserResponseDTO.class, userId);
-        } catch (HttpClientErrorException.NotFound exception) {
-            throw new ResourceNotFoundException("user not found.");
+            String url = "/api/user/" + userId;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+            ResponseEntity<UserResponseDTO> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                requestEntity,
+                UserResponseDTO.class
+            );
+            return response.getBody();
+        } catch (HttpClientErrorException.NotFound ex) {
+            throw new ResourceNotFoundException("User with ID " + userId + " not found in the monolith.");
         }
     }
 }

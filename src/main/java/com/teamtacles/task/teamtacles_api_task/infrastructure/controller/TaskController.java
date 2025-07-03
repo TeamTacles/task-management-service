@@ -34,7 +34,8 @@ public class TaskController {
                                                       @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
         List<String> roles = getRolesFromJwt(jwt);
-        TaskResponseDTO response = taskService.createTask(projectId, taskRequestDTO, userId, roles);
+        String token = jwt.getTokenValue();
+        TaskResponseDTO response = taskService.createTask(projectId, taskRequestDTO, userId, roles, token);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -44,7 +45,8 @@ public class TaskController {
                                                        @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
         List<String> roles = getRolesFromJwt(jwt);
-        TaskResponseDTO response = taskService.getTasksById(projectId, taskId, userId, roles);
+        String token = jwt.getTokenValue();
+        TaskResponseDTO response = taskService.getTasksById(projectId, taskId, userId, roles, token);
         return ResponseEntity.ok(response);
     }
 
@@ -55,7 +57,8 @@ public class TaskController {
                                                                                   @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long requestingUserId = getUserIdFromJwt(jwt);
         List<String> roles = getRolesFromJwt(jwt);
-        PagedResponse<TaskResponseDTO> response = taskService.getAllTasksFromUserInProject(pageable, projectId, userId, requestingUserId, roles);
+        String token = jwt.getTokenValue();
+        PagedResponse<TaskResponseDTO> response = taskService.getAllTasksFromUserInProject(pageable, projectId, userId, requestingUserId, roles, token);
         return ResponseEntity.ok(response);
     }
 
@@ -67,7 +70,8 @@ public class TaskController {
                                                                                       @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
         List<String> roles = getRolesFromJwt(jwt);
-        PagedResponse<TaskResponseFilteredDTO> response = taskService.getAllTasksFiltered(status, dueDate, projectId, pageable, userId, roles);
+        String token = jwt.getTokenValue();
+        PagedResponse<TaskResponseFilteredDTO> response = taskService.getAllTasksFiltered(status, dueDate, projectId, pageable, userId, roles, token);
         return ResponseEntity.ok(response);
     }
 
@@ -78,7 +82,8 @@ public class TaskController {
                                                       @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
         List<String> roles = getRolesFromJwt(jwt);
-        TaskResponseDTO response = taskService.updateTask(projectId, taskId, taskRequestDTO, userId, roles);
+        String token = jwt.getTokenValue();
+        TaskResponseDTO response = taskService.updateTask(projectId, taskId, taskRequestDTO, userId, roles, token);
         return ResponseEntity.ok(response);
     }
 
@@ -89,7 +94,8 @@ public class TaskController {
                                                             @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
         List<String> roles = getRolesFromJwt(jwt);
-        TaskResponseDTO response = taskService.updateStatus(projectId, taskId, patchDTO, userId, roles);
+        String token = jwt.getTokenValue();
+        TaskResponseDTO response = taskService.updateStatus(projectId, taskId, patchDTO, userId, roles, token);
         return ResponseEntity.ok(response);
     }
 
@@ -99,6 +105,7 @@ public class TaskController {
                                            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
         List<String> roles = getRolesFromJwt(jwt);
+        String token = jwt.getTokenValue();
         taskService.deleteTask(projectId, taskId, userId, roles);
         return ResponseEntity.noContent().build();
     }

@@ -1,6 +1,10 @@
 package com.teamtacles.task.teamtacles_api_task.application.service;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -17,11 +21,24 @@ public class ProjectServiceClient {
         this.restTemplate = restTemplate;
     }
 
-    public ProjectResponseDTO getProjectById(Long projectId){
-        try{
-            return restTemplate.getForObject("/api/project/{projectId}", ProjectResponseDTO.class, projectId);
-        } catch (HttpClientErrorException.NotFound exception) {
-            throw new ResourceNotFoundException("Project not found.");
+    // Método corrigido para aceitar e usar o token
+    public ProjectResponseDTO getProjectById(Long projectId, String token) {
+        try {
+            String url = "/api/project/" + projectId;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+            ResponseEntity<ProjectResponseDTO> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                requestEntity,
+                ProjectResponseDTO.class
+            );
+            return response.getBody();
+        } catch (HttpClientErrorException.NotFound ex) {
+            throw new ResourceNotFoundException("Project with ID " + projectId + " not found in the monolith.");
         }
     }
 }
