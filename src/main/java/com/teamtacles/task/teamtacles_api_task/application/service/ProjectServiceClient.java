@@ -1,12 +1,14 @@
 package com.teamtacles.task.teamtacles_api_task.application.service;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.teamtacles.task.teamtacles_api_task.application.dto.response.ProjectResponseDTO;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.exception.ResourceNotFoundException;
 
+@Service
 public class ProjectServiceClient {
 
     private final RestTemplate restTemplate;

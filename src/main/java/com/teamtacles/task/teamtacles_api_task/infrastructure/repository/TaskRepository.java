@@ -4,11 +4,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 // import com.teamtacles.task.teamtacles_api_task.domain.model.Project;
 import com.teamtacles.task.teamtacles_api_task.domain.model.Task;
 import com.teamtacles.task.teamtacles_api_task.domain.model.enums.Status;
+import com.teamtacles.task.teamtacles_api_task.infrastructure.persistence.entity.TaskEntity;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -25,9 +27,9 @@ import java.util.Optional;
  * @since 2025-05-026
  */
 @Repository
-public interface TaskRepository extends JpaRepository<Task, Long> {
-    // Page<Task> findByProject(Project project, Pageable Pageable);
-    Page<Task> findByStatus(Status status, Pageable pageable);
+public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
+    
+    Page<TaskEntity> findByStatus(Status status, Pageable pageable);
 
      /**
      * Finds a paginated list of tasks within a specific project where a given user
@@ -38,8 +40,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @param pageable Pagination information (page number, page size, sorting).
      * @return A Page of tasks matching the project and user responsibility criteria.
      */
-    @Query("SELECT t FROM Task t JOIN t.usersResponsability u WHERE t.project.id = :projectId AND u.id = :userId")
-    Page<Task> findByProjectIdAndUsersResponsabilityId(Long projectId, Long userId, Pageable pageable);
+    @Query("SELECT t FROM TaskEntity t WHERE t.projectId = :projectId AND :userId MEMBER OF t.responsibleUserIds")
+    Page<TaskEntity> findByProjectIdAndResponsibleUser(@Param("projectId") Long projectId, @Param("userId") Long userId, Pageable pageable);
 
      /**
      * Finds a paginated list of tasks based on multiple optional filtering criteria.
@@ -54,14 +56,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @return A Page of tasks matching the specified filters.
      */
      @Query("""
-        SELECT DISTINCT t FROM Task t
-        LEFT JOIN t.usersResponsability ur
-        WHERE COALESCE(:statusEnum, t.status) = t.status
-        AND t.dueDate <= COALESCE(:dueDate, t.dueDate)
-        AND COALESCE(:projectId, t.project.id) = t.project.id
-        AND (t.owner.id = :userId OR ur.id = :userId)
+        SELECT t FROM TaskEntity t
+        WHERE (:status IS NULL OR t.status = :status)
+        AND (:dueDate IS NULL OR t.dueDate <= :dueDate)
+        AND (:projectId IS NULL OR t.projectId = :projectId)
+        AND (t.ownerUserId = :userId OR :userId MEMBER OF t.responsibleUserIds)
     """)
-    Page<Task> findTasksFilteredByUser(Status statusEnum, LocalDateTime dueDate, Long projectId, Long userId, Pageable pageable);
+    Page<TaskEntity> findTasksFilteredByUser(@Param("status") Status status, @Param("dueDate") LocalDateTime dueDate, @Param("projectId") Long projectId, @Param("userId") Long userId, Pageable pageable);
 
     /**
      * Finds a paginated list of tasks based on multiple optional filtering criteria.
@@ -75,10 +76,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @return A Page of tasks matching the specified filters.
      */
     @Query("""
-        SELECT DISTINCT t FROM Task t
-        WHERE COALESCE(:statusEnum, t.status) = t.status
-        AND t.dueDate <= COALESCE(:dueDate, t.dueDate)
-        AND COALESCE(:projectId, t.project.id) = t.project.id
+        SELECT t FROM TaskEntity t
+        WHERE (:status IS NULL OR t.status = :status)
+        AND (:dueDate IS NULL OR t.dueDate <= :dueDate)
+        AND (:projectId IS NULL OR t.projectId = :projectId)
     """)
-    Page<Task> findTasksFiltered(Status statusEnum, LocalDateTime dueDate, Long projectId, Pageable pageable);  
+    Page<TaskEntity> findTasksFiltered(@Param("status") Status status, @Param("dueDate") LocalDateTime dueDate, @Param("projectId") Long projectId, Pageable pageable);
 }
