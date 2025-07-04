@@ -75,8 +75,11 @@ public class TaskService {
         userServiceClient.getUserById(targetUserId, token);
 
         Page<TaskEntity> tasksPage = taskRepository.findByProjectIdAndResponsibleUser(projectId, targetUserId, pageable);
+    // Pedro fiz alteração aq foi necessario declarar a lambda em uma variável do tipo Function pra remover a ambiguidade no compilador
+    java.util.function.Function<TaskEntity, TaskResponseDTO> converter = entity -> convertToDto(entity, token);
 
-        return pagedResponseMapper.toPagedResponse(tasksPage, entity -> convertToDto(entity, token));
+    // ai no caso, a chamada não é mais ambígua
+    return pagedResponseMapper.toPagedResponse(tasksPage, converter);
     }
 
     public PagedResponse<TaskResponseFilteredDTO> getAllTasksFiltered(String status, LocalDateTime dueDate, Long projectId, Pageable pageable, Long userId, List<String> roles, String token) {
