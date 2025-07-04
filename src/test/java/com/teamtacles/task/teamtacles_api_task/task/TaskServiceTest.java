@@ -13,6 +13,8 @@ import com.teamtacles.task.teamtacles_api_task.infrastructure.exception.Resource
 import com.teamtacles.task.teamtacles_api_task.infrastructure.mapper.PagedResponseMapper;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.persistence.entity.TaskEntity;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.repository.TaskRepository;
+
+import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -377,8 +379,6 @@ void getTasksById_shouldThrowResourceNotFoundException_whenTaskDoesNotBelongToPr
     verify(userServiceClient, never()).getUserById(anyLong(), anyString());
 }
 
-// Adicione este método à sua classe de teste
-
 @Test
 @DisplayName("2.6: Should throw AccessDeniedException when unauthorized user tries to access task by ID")
 void getTasksById_shouldThrowAccessDeniedException_whenUnauthorizedUserIsNotAuthorized() {
@@ -441,6 +441,29 @@ void getAllTasksFromUserInProject_shouldReturnPagedTasks_whenUserIsAdmin() {
     verify(userServiceClient, times(1)).getUserById(anyLong(), anyString());
     verify(taskRepository, times(1)).findByProjectIdAndResponsibleUser(projectIdToSearch, userIdToSearchTasksFor, pageable);
     verify(pagedResponseMapper, times(1)).toPagedResponse(any(Page.class), any(Function.class));
+}
+
+@Test
+@DisplayName("3.2: Should throw AccessDeniedException when a non-admin user tries to get tasks from another user in a project")
+void getAllTasksFromUserInProject_shouldThrowAccessDeniedException_whenUserIsNotAdmin() {
+    // ARRANGE
+    Long projectIdToSearch = 100L;
+    Long targetUserId = 3L;      // Tarefas do responsibleUser
+    Long requestingUserId = 2L; // normalUser está fazendo a requisição
+    Pageable pageable = PageRequest.of(0, 10);
+
+    when(projectServiceClient.getProjectById(anyLong(), anyString())).thenReturn(testProjectDto);
+    when(userServiceClient.getUserById(anyLong(), anyString())).thenReturn(normalUserDto, responsibleUserDto);
+  
+    // ACT & ASSERT 
+    AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
+        taskService.getAllTasksFromUserInProject(pageable, projectIdToSearch, targetUserId, requestingUserId, userRoles, fakeToken);
+    });
+
+    assertEquals("FORBIDDEN - You do not have permission to access this user's tasks.", exception.getMessage());
+
+    verify(taskRepository, never()).findByProjectIdAndResponsibleUser(anyLong(), anyLong(), any(Pageable.class));
+    verify(pagedResponseMapper, never()).toPagedResponse(any(Page.class), any(java.util.function.Function.class));
 }
 
     // falta mais testes ;-;
