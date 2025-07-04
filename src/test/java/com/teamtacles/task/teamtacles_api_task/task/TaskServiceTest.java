@@ -466,6 +466,29 @@ void getAllTasksFromUserInProject_shouldThrowAccessDeniedException_whenUserIsNot
     verify(pagedResponseMapper, never()).toPagedResponse(any(Page.class), any(java.util.function.Function.class));
 }
 
+@Test
+@DisplayName("3.3: Should throw ResourceNotFoundException when project is not found (admin access)")
+void getAllTasksFromUserInProject_shouldThrowResourceNotFoundException_whenProjectNotFoundForAdmin() {
+    // ARRANGE 
+    Long nonexistentProjectId = 888L;
+    Long userIdToSearchTasksFor = 3L;
+    Long adminId = 1L;
+    Pageable pageable = PageRequest.of(0, 10);
+
+    when(projectServiceClient.getProjectById(nonexistentProjectId, fakeToken))
+        .thenThrow(new ResourceNotFoundException("Project not found."));
+
+    // ACT & ASSERT 
+    assertThrows(ResourceNotFoundException.class, () -> {
+        taskService.getAllTasksFromUserInProject(pageable, nonexistentProjectId, userIdToSearchTasksFor, adminId, adminRoles, fakeToken);
+    });
+
+    verify(userServiceClient, never()).getUserById(anyLong(), anyString());
+    verify(taskRepository, never()).findByProjectIdAndResponsibleUser(anyLong(), anyLong(), any(Pageable.class));
+    verify(pagedResponseMapper, never()).toPagedResponse(any(Page.class), any(java.util.function.Function.class));
+}
+
+
     // falta mais testes ;-;
 
     }
