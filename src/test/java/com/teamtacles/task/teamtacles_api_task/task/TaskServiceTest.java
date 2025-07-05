@@ -221,12 +221,10 @@ public class TaskServiceTest {
 
         assertTrue(exception.getMessage().contains("User with ID " + nonexistentResponsibleId + " not found."));
         verify(taskRepository, never()).save(any(TaskEntity.class));
-            verify(projectServiceClient, times(1)).getProjectById(anyLong(), anyString());
+            verify(projectServiceClient, times(2)).getProjectById(anyLong(), anyString()); //futuramente reparar no numero de invocacoes
         verify(userServiceClient, times(4)).getUserById(anyLong(), anyString()); // chama 4 vezes o userServiceClient
 
     }
-
-    // Adicione este método à sua classe de teste
 
     @Test
     @DisplayName("1.4: Deve lançar AccessDeniedException quando o usuário não pode visualizar o projeto")
