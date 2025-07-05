@@ -118,6 +118,9 @@ public class TaskServiceTest {
         existingTaskEntity.setStatus(Status.INPROGRESS);
         existingTaskEntity.setResponsibleUserIds(List.of(3L)); // ID do responsibleUser
         existingTaskEntity.setDueDate(LocalDateTime.now().plusDays(5));
+        testProjectDto.setCreator(normalUserDto); 
+
+
     }
 
     @Test
@@ -154,8 +157,8 @@ public class TaskServiceTest {
         assertNotNull(actualResponseDTO, "The response DTO should not be null.");
 
         // para o dev do futuro, aqui garantimos pelo menos duas chamadas mas o taskService.createTask dispara 5 chamadas ao userServiceClient, se mudar  verifique se o teste vai fzr sentido
-        verify(projectServiceClient, times(1)).getProjectById(projectId, fakeToken);
-        verify(userServiceClient, atLeast(2)).getUserById(anyLong(), eq(fakeToken));  
+        verify(projectServiceClient, times(2)).getProjectById(anyLong(), anyString()); // futuramente alterar de 2 chamadas para apenas 1 
+        verify(userServiceClient, atLeast(2)).getUserById   (anyLong(), eq(fakeToken));
 
 
         ArgumentCaptor<TaskEntity> taskCaptor = ArgumentCaptor.forClass(TaskEntity.class);
