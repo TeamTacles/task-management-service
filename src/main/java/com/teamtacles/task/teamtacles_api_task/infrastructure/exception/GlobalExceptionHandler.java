@@ -23,6 +23,19 @@ public class GlobalExceptionHandler {
     //logger para registrar os erros
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    //503 - Captura a exceção customizada quando um serviço dependente está indisponível.
+    @ExceptionHandler(ServiceUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ResponseEntity<ErrorResponse> handleServiceUnavailableException(ServiceUnavailableException ex) {
+        logger.error("Service Unavailable: ", ex);
+        ErrorResponse errorResponse = new ErrorResponse(
+            HttpStatus.SERVICE_UNAVAILABLE.value(),
+            "Service Temporarily Unavailable",
+            ex.getMessage() 
+        );
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+    }
+
     //400 - quando os dados de entrada não são válidos 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
