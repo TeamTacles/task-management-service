@@ -36,5 +36,5 @@ public class TaskResponseFilteredDTO{
     private List<UserResponseDTO> usersResponsability;
     
     @Schema(description = "The project details associated with this task, potentially filtered.")
-    private TaskProjectResponseFilteredDTO project;
+    private ProjectResponseFilteredDTO project;
 }  

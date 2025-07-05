@@ -12,6 +12,15 @@ import org.springframework.web.client.RestTemplate;
 import com.teamtacles.task.teamtacles_api_task.application.dto.response.UserResponseDTO;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.exception.ResourceNotFoundException;
 
+/**
+ * A client service for interacting with the external User monolith.
+ * This class uses a configured RestTemplate to make HTTP requests to fetch user data,
+ * handling necessary authentication and error translation.
+ *
+ * @author TeamTacles 
+ * @version 1.0
+ * @since 2025-07-04
+ */
 @Service
 public class UserServiceClient {
 
@@ -21,7 +30,16 @@ public class UserServiceClient {
         this.restTemplate = restTemplate;
     }
 
-    // Método corrigido para aceitar e usar o token
+    /**
+     * Retrieves the details of a specific user by their ID from the user service.
+     * It sends a GET request with the provided JWT token in the Authorization header.
+     *
+     * @param userId The unique ID of the user to retrieve.
+     * @param token  The JWT token of the authenticated user making the request, used for authorization.
+     * @return A UserResponseDTO containing the details of the found user.
+     * @throws ResourceNotFoundException if the user service returns a 404 Not Found error,
+     * indicating that no user with the given ID exists.
+     */    
     public UserResponseDTO getUserById(Long userId, String token){
         try{
             String url = "/api/user/" + userId;

@@ -16,15 +16,15 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * Interface de repositório para gerenciar entidades {@link Task} na aplicação TeamTacles.
- * Estende {@link JpaRepository} para fornecer operações CRUD padrão e capacidades de paginação.
+ * Repository interface for managing TaskEntity entities.
+ * Extends JpaRepository to provide standard CRUD and pagination capabilities.
+ * 
+ * This interface defines custom query methods to retrieve tasks based on various criteria,
+ * including project and user relationships, and dynamic filtering.
  *
- * Esta interface define métodos de consulta personalizados para recuperar tarefas com base em vários critérios,
- * incluindo relacionamentos com projetos e usuários, e buscas filtradas.
- *
- * @author Equipe de Desenvolvimento TeamTacles
- * @version 1.0
- * @since 2025-05-026
+ * @author TeamTacles
+ * @version 1.1
+ * @since 2025-07-04
  */
 @Repository
 public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
@@ -32,27 +32,26 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
     Page<TaskEntity> findByStatus(Status status, Pageable pageable);
 
      /**
-     * Finds a paginated list of tasks within a specific project where a given user
-     * is listed in the task's responsibilities.
+     * Retrieves a paginated list of tasks that match a specific status.
      *
-     * @param projectId The ID of the Project to search tasks within.
-     * @param userId The ID of the User responsible for the task.
-     * @param pageable Pagination information (page number, page size, sorting).
-     * @return A Page of tasks matching the project and user responsibility criteria.
+     * @param status The status to filter tasks by.
+     * @param pageable Pagination and sorting information.
+     * @return A Page of tasks matching the given status.
      */
     @Query("SELECT t FROM TaskEntity t WHERE t.projectId = :projectId AND :userId MEMBER OF t.responsibleUserIds")
     Page<TaskEntity> findByProjectIdAndResponsibleUser(@Param("projectId") Long projectId, @Param("userId") Long userId, Pageable pageable);
 
-     /**
-     * Finds a paginated list of tasks based on multiple optional filtering criteria.
-     * This query allows filtering by task status, due date (tasks due on or before this date),
-     * the project it belongs to, and whether a specific user is the owner or among the responsible users.
+    /**
+     * Finds a paginated list of tasks using multiple optional filters, including a user-specific filter.
      *
-     * @param statusEnum The Status to filter by (optional: {null} to ignore).
-     * @param dueDate The maximum due date to filter by (optional: { null} to ignore).
-     * @param projectId The ID of the Project to filter by (optional: {null} to ignore).
-     * @param userId The ID of the User (owner or responsible) to filter by (optional: {null} to ignore).
-     * @param pageable Pagination information (page number, page size, sorting).
+     * The query filters by status, due date, project, and checks if the given user is either the
+     * *owner* or a *member of the responsible users list*.
+     *
+     * @param status The task status to filter by. Can be null to ignore.
+     * @param dueDate The latest due date. The query will find tasks due on or before this date. Can be null to ignore.
+     * @param projectId The ID of the project to filter by. Can be null to ignore.
+     * @param userId The ID of the user to filter by (as owner or responsible).
+     * @param pageable Pagination and sorting information.
      * @return A Page of tasks matching the specified filters.
      */
      @Query("""
@@ -65,14 +64,14 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
     Page<TaskEntity> findTasksFilteredByUser(@Param("status") Status status, @Param("dueDate") LocalDateTime dueDate, @Param("projectId") Long projectId, @Param("userId") Long userId, Pageable pageable);
 
     /**
-     * Finds a paginated list of tasks based on multiple optional filtering criteria.
-     * This query allows filtering by task status, due date (tasks due on or before this date),
-     * and the project it belongs to. This version does not filter by user responsibility.
+     * Finds a paginated list of tasks using multiple optional filters, without user-specific criteria.
      *
-     * @param statusEnum The Status to filter by (optional: {null} to ignore).
-     * @param dueDate The maximum due date to filter by (optional: {null} to ignore).
-     * @param projectId The ID of the Project to filter by (optional: {null} to ignore).
-     * @param pageable Pagination information (page number, page size, sorting).
+     * This query allows filtering by task status, due date, and the project it belongs to.
+     *
+     * @param status The task status to filter by. Can be null to ignore.
+     * @param dueDate The latest due date. The query will find tasks due on or before this date. Can be null to ignore.
+     * @param projectId The ID of the project to filter by. Can be null to ignore.
+     * @param pageable Pagination and sorting information.
      * @return A Page of tasks matching the specified filters.
      */
     @Query("""

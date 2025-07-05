@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Optional;
 
 import com.teamtacles.task.teamtacles_api_task.application.dto.response.UserResponseDTO;
-//import com.teamtacles.teamtacles_api.infrastructure.dto.response.ProjectResponseDTO;
-//import com.teamtacles.teamtacles_api.dto.response.UserResponseDTO;
 import com.teamtacles.task.teamtacles_api_task.domain.model.enums.Status;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,8 +29,6 @@ public class TaskRequestPatchDTO {
     private Optional<Status> status = Optional.empty();
 
     private Optional<UserResponseDTO> owner = Optional.empty();
-
-    // private Optional<ProjectResponseDTO> project = Optional.empty();
 
     @Schema(description = "A new list of user IDs (Long) to replace the current task responsibilities. If provided, the existing list will be fully replaced.", example = "[789, 987]", type = "array")
     private Optional<List<Long>> userId = Optional.empty();
