@@ -12,6 +12,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class UserResponseDTO{
+    @Schema(description = "The unique identifier of the User.", example = "1")
+    private Long userId;
+
     @Schema(description = "The unique username of the user.", example = "jane.doe")
     private String userName;
 

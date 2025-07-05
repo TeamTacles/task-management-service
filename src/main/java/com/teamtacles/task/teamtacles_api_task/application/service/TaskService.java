@@ -65,6 +65,7 @@ public class TaskService {
     public TaskResponseDTO createTask(Long projectId, TaskRequestDTO taskRequestDTO, Long ownerId, List<String> roles, String token) {
         ensureUserCanViewProject(projectId, ownerId, roles, token);
         userServiceClient.getUserById(ownerId, token);
+        ProjectResponseDTO projectDTO = projectServiceClient.getProjectById(projectId, token);
 
         List<Long> responsibleIds = new ArrayList<>(taskRequestDTO.getUsersResponsability());
         for (Long responsibleId : responsibleIds) {
@@ -73,6 +74,10 @@ public class TaskService {
 
         if (!responsibleIds.contains(ownerId)) {
             responsibleIds.add(ownerId);
+        }
+
+        if (!responsibleIds.contains(projectDTO.getCreator().getUserId())) {
+            responsibleIds.add(projectDTO.getCreator().getUserId());
         }
 
         TaskEntity taskEntity = modelMapper.map(taskRequestDTO, TaskEntity.class);
@@ -249,6 +254,25 @@ public class TaskService {
         TaskEntity taskEntity = findTaskByIdAndProject(taskId, projectId);
         ensureUserCanAccessTask(taskEntity, userId, roles);
         taskRepository.delete(taskEntity);
+    }
+
+    /**
+     * Deletes all tasks associated with a given project.
+     * This is a bulk operation. Permission is checked at the project level:
+     * only an administrator or the project's creator can perform this action.
+     *
+     * @param projectId The ID of the project whose tasks will be deleted.
+     * @param userId The ID of the user making the request.
+     * @param roles The roles of the user, used for permission checks.
+     * @param token The JWT token for authenticating calls to other services.
+     * @throws AccessDeniedException if the user is not an admin or the project creator.
+     */
+    public void deleteAllTasksFromProject(Long projectId, Long userId, List<String> roles) {
+        List<TaskEntity> tasksEntity = taskRepository.findTasksByProjectId(projectId);
+        for (TaskEntity taskEntity : tasksEntity) {
+            ensureUserCanAccessTask(taskEntity, userId, roles);
+            taskRepository.delete(taskEntity);
+        }
     }
 
     /**

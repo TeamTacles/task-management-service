@@ -13,6 +13,7 @@ import com.teamtacles.task.teamtacles_api_task.domain.model.enums.Status;
 import com.teamtacles.task.teamtacles_api_task.infrastructure.persistence.entity.TaskEntity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -81,4 +82,14 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
         AND (:projectId IS NULL OR t.projectId = :projectId)
     """)
     Page<TaskEntity> findTasksFiltered(@Param("status") Status status, @Param("dueDate") LocalDateTime dueDate, @Param("projectId") Long projectId, Pageable pageable);
+    
+    /**
+     * Finds all tasks associated with a specific project ID.
+     * This query method is automatically implemented by Spring Data JPA based on its name.
+     *
+     * @param projectId The unique ID of the project for which to find tasks.
+     * @return A List of TaskEntity objects belonging to the specified project. 
+     * Returns an empty list if no tasks are found.
+     */
+    List<TaskEntity> findTasksByProjectId(Long projectId);
 }

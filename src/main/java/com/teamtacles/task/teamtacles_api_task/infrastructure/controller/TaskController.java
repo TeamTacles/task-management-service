@@ -253,6 +253,31 @@ public class TaskController {
     }
 
     /**
+     * Deletes ALL tasks from a specific project.
+     * This is a bulk operation and should be used with caution.
+     * Only administrators or the project creator can perform this action.
+     *
+     * @param projectId The ID of the project from which all tasks will be deleted.
+     * @param jwt       The JWT object for the authenticated user.
+     * @return A ResponseEntity with no content and an HTTP status of 204 (No Content).
+     */
+    @Operation(summary = "Delete all tasks from a project", description = "Deletes all tasks associated with a specific project. This is a bulk, irreversible action.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "All tasks from the project were deleted successfully."),
+            @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permission to perform this bulk deletion."),
+            @ApiResponse(responseCode = "404", description = "Not Found: The specified project does not exist.")
+    })
+    @DeleteMapping("/{projectId}/tasks")
+    public ResponseEntity<Void> deleteAllTasksFromProject(@PathVariable Long projectId,
+                                           @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
+        Long userId = getUserIdFromJwt(jwt);
+        List<String> roles = getRolesFromJwt(jwt);
+        String token = jwt.getTokenValue();
+        taskService.deleteAllTasksFromProject(projectId, userId, roles);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Extracts the user ID from the 'userId' claim of a JWT.
      * Handles cases where the ID might be an Integer or Long.
      *

@@ -47,8 +47,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.function.Function;
 
-
-
 @ExtendWith(MockitoExtension.class)
 public class TaskServiceTest {
 
@@ -78,7 +76,6 @@ public class TaskServiceTest {
     private TaskEntity existingTaskEntity;
     private List<String> adminRoles, userRoles;
     private String fakeToken;
-    
 
     @BeforeEach 
     void setUp() {
