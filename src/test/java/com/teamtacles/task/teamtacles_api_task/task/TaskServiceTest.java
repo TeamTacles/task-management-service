@@ -1,5 +1,6 @@
 package com.teamtacles.task.teamtacles_api_task.task;
 import com.teamtacles.task.teamtacles_api_task.application.dto.request.TaskRequestDTO;
+import com.teamtacles.task.teamtacles_api_task.application.dto.request.TaskRequestPatchDTO;
 import com.teamtacles.task.teamtacles_api_task.application.dto.response.PagedResponse;
 import com.teamtacles.task.teamtacles_api_task.application.dto.response.ProjectResponseDTO;
 import com.teamtacles.task.teamtacles_api_task.application.dto.response.ProjectResponseFilteredDTO;
@@ -41,6 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
@@ -766,6 +768,224 @@ void getAllTasksFiltered_shouldThrowAccessDeniedException_whenNormalUserFiltersB
     verify(userServiceClient, times(1)).getUserById(unauthorizedUserId, fakeToken);
 }
 
+@Test
+@DisplayName("4.9: Normal user should get their tasks filtered by status using getAllTasksFiltered")
+void getAllTasksFiltered_shouldReturnUserTasksFilteredByStatus_whenNormalUserFiltersByStatus() {
+    // ARRANGE 
+    Pageable pageable = PageRequest.of(0, 10);
+    Long normalUserId = 2L;
+    String statusFilterString = "INPROGRESS";
+    Status expectedStatusEnum = Status.INPROGRESS;
+
+    List<TaskEntity> tasksFromRepo = List.of(existingTaskEntity);
+    Page<TaskEntity> taskPageFromRepo = new PageImpl<>(tasksFromRepo, pageable, tasksFromRepo.size());
+    when(taskRepository.findTasksFilteredByUser(eq(expectedStatusEnum), isNull(), isNull(), eq(normalUserId), eq(pageable)))
+        .thenReturn(taskPageFromRepo);
+
+    when(projectServiceClient.getProjectById(anyLong(), anyString())).thenReturn(testProjectDto);
+    when(userServiceClient.getUserById(eq(2L), anyString())).thenReturn(normalUserDto);
+    when(userServiceClient.getUserById(eq(3L), anyString())).thenReturn(responsibleUserDto);
+
+    when(modelMapper.map(any(TaskEntity.class), eq(TaskResponseFilteredDTO.class))).thenReturn(new TaskResponseFilteredDTO());
+    when(modelMapper.map(any(ProjectResponseDTO.class), any())).thenReturn(new ProjectResponseFilteredDTO());
+
+    //  ACT 
+    PagedResponse<TaskResponseFilteredDTO> actualPagedResponse = taskService.getAllTasksFiltered(
+        statusFilterString, null, null, pageable, normalUserId, userRoles, fakeToken
+    );
+
+    // ASSERT 
+    assertNotNull(actualPagedResponse);
+    assertEquals(1, actualPagedResponse.getTotalElements());
+
+    verify(projectServiceClient, times(1)).getProjectById(anyLong(), anyString());
+
+    verify(taskRepository, times(1)).findTasksFilteredByUser(expectedStatusEnum, null, null, normalUserId, pageable);
+
+    verify(taskRepository, never()).findTasksFiltered(any(), any(), any(), any(Pageable.class));
+}
+
+@Test
+@DisplayName("5.2: Task owner should update task status successfully")
+void updateStatus_shouldUpdateStatus_whenUserIsOwner() {
+    //  ARRANGE 
+    Long projectId = 100L;
+    Long taskId = 1L;
+    Long ownerId = 2L; // ID do normalUser, que é o dono da tarefa
+    
+    TaskRequestPatchDTO patchDTO = new TaskRequestPatchDTO();
+    patchDTO.setStatus(Optional.of(Status.DONE));
+
+    when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+    when(taskRepository.save(any(TaskEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    when(modelMapper.map(any(TaskEntity.class), eq(TaskResponseDTO.class))).thenReturn(new TaskResponseDTO());
+    when(userServiceClient.getUserById(anyLong(), anyString())).thenReturn(normalUserDto, responsibleUserDto);
+
+
+    // ACT 
+    TaskResponseDTO actualResponse = taskService.updateStatus(projectId, taskId, patchDTO, ownerId, userRoles, fakeToken);
+
+    //  ASSERT 
+    assertNotNull(actualResponse);
+
+    ArgumentCaptor<TaskEntity> taskCaptor = ArgumentCaptor.forClass(TaskEntity.class);
+    verify(taskRepository).save(taskCaptor.capture());
+    TaskEntity savedTask = taskCaptor.getValue();
+
+    assertEquals(Status.DONE, savedTask.getStatus(), "The task status should have been updated to DONE.");
+
+    verify(taskRepository, times(1)).findById(taskId);
+    verify(taskRepository, times(1)).save(any(TaskEntity.class));
+    verify(userServiceClient, times(2)).getUserById(anyLong(), anyString()); // Chamado no convertToDto
+}
+
+@Test
+@DisplayName("5.3: Responsible user should update task status successfully")
+void updateStatus_shouldUpdateStatus_whenUserIsResponsible() {
+    // ARRANGE 
+    Long projectId = 100L;
+    Long taskId = 1L;
+    Long responsibleId = 3L; // ID do responsibleUser, que está na lista de responsáveis da tarefa.
+
+    TaskRequestPatchDTO patchDTO = new TaskRequestPatchDTO();
+    patchDTO.setStatus(Optional.of(Status.DONE));
+
+    when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+    when(taskRepository.save(any(TaskEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    when(modelMapper.map(any(TaskEntity.class), eq(TaskResponseDTO.class))).thenReturn(new TaskResponseDTO());
+    when(userServiceClient.getUserById(anyLong(), anyString())).thenReturn(normalUserDto, responsibleUserDto);
+
+    // ACT 
+    TaskResponseDTO actualResponse = taskService.updateStatus(projectId, taskId, patchDTO, responsibleId, userRoles, fakeToken);
+
+    //  ASSERT 
+    assertNotNull(actualResponse);
+
+    ArgumentCaptor<TaskEntity> taskCaptor = ArgumentCaptor.forClass(TaskEntity.class);
+    verify(taskRepository).save(taskCaptor.capture());
+    TaskEntity savedTask = taskCaptor.getValue();
+
+    assertEquals(Status.DONE, savedTask.getStatus(), "The task status should have been updated to DONE.");
+
+    verify(taskRepository, times(1)).findById(taskId);
+    verify(taskRepository, times(1)).save(any(TaskEntity.class));
+    verify(userServiceClient, times(2)).getUserById(anyLong(), anyString()); // Chamado no convertToDto
+}  
+
+@Test
+@DisplayName("5.4: Should throw AccessDeniedException when unauthorized user tries to update status")
+void updateStatus_shouldThrowAccessDeniedException_whenUserIsUnauthorized() {
+    // ARRANGE 
+    Long projectId = 100L;
+    Long taskId = 1L;
+    Long unauthorizedUserId = 4L; // ID do otherUserDto
+
+    TaskRequestPatchDTO patchDTO = new TaskRequestPatchDTO();
+    patchDTO.setStatus(Optional.of(Status.DONE));
+
+    when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+
+
+    //  ACT & ASSERT 
+    AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
+        taskService.updateStatus(projectId, taskId, patchDTO, unauthorizedUserId, userRoles, fakeToken);
+    });
+
+    assertTrue(exception.getMessage().contains("FORBIDDEN - You do not have permission to access this task."));
+
+    verify(taskRepository, never()).save(any(TaskEntity.class));
+}
+
+@Test
+@DisplayName("5.5: Should throw ResourceNotFoundException when task for status update is not found")
+void updateStatus_shouldThrowResourceNotFoundException_whenTaskNotFound() {
+    //  ARRANGE 
+    Long nonExistentTaskId = 999L;
+    Long projectId = 100L;
+    Long adminId = 1L; // O usuário que faz a requisição não importa muito aqui, mas usamos o admin por  habito
+
+    TaskRequestPatchDTO patchDTO = new TaskRequestPatchDTO();
+    patchDTO.setStatus(Optional.of(Status.DONE));
+
+    when(taskRepository.findById(nonExistentTaskId)).thenReturn(Optional.empty());
+
+    //  ACT & ASSERT 
+    ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+        taskService.updateStatus(projectId, nonExistentTaskId, patchDTO, adminId, adminRoles, fakeToken);
+    });
+
+    assertTrue(exception.getMessage().contains("Task with ID " + nonExistentTaskId + " not found."));
+
+    verify(taskRepository, never()).save(any(TaskEntity.class));
+}
+
+
+@Test
+@DisplayName("5.6: Should throw ResourceNotFoundException if task does not belong to project during status update")
+void updateStatus_shouldThrowResourceNotFoundException_whenTaskDoesNotBelongToProject() {
+    //  ARRANGE
+    Long taskId = 1L;
+    Long differentProjectId = 777L; // Um ID de projeto que não corresponde ao da tarefa
+    Long adminId = 1L; // O usuário que faz a requisição
+
+    TaskRequestPatchDTO patchDTO = new TaskRequestPatchDTO();
+    patchDTO.setStatus(Optional.of(Status.DONE));
+
+    when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+
+
+    // === ACT & ASSERT ===
+    ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+        taskService.updateStatus(differentProjectId, taskId, patchDTO, adminId, adminRoles, fakeToken);
+    });
+
+    assertTrue(exception.getMessage().contains("Task with ID " + taskId + " does not belong to project with ID " + differentProjectId));
+
+    verify(taskRepository, never()).save(any(TaskEntity.class));
+} 
+
+@Test
+@DisplayName("6.1: Admin should update task details successfully")
+void updateTask_shouldUpdateDetails_whenUserIsAdmin() {
+    //  ARRANGE 
+    Long taskId = 1L;
+    Long projectId = 100L;
+    Long adminId = 1L;
+    Long responsibleId = 3L;
+
+    TaskRequestDTO requestDTO = new TaskRequestDTO();
+    requestDTO.setTitle("Updated Title by Admin");
+    requestDTO.setDescription("Updated Description");
+    requestDTO.setUsersResponsability(List.of(responsibleId));
+    requestDTO.setDueDate(LocalDateTime.now().plusDays(10));
+
+    when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+
+    when(userServiceClient.getUserById(eq(responsibleId), anyString())).thenReturn(responsibleUserDto);
+    
+    doNothing().when(modelMapper).map(any(TaskRequestDTO.class), any(TaskEntity.class));
+
+    when(modelMapper.map(any(TaskEntity.class), eq(TaskResponseDTO.class))).thenReturn(new TaskResponseDTO());
+
+    when(taskRepository.save(any(TaskEntity.class))).thenReturn(existingTaskEntity);
+    when(userServiceClient.getUserById(eq(2L), anyString())).thenReturn(normalUserDto);
+    
+    //  ACT 
+    TaskResponseDTO actualResponse = taskService.updateTask(projectId, taskId, requestDTO, adminId, adminRoles, fakeToken);
+
+   //  ASSERT 
+assertNotNull(actualResponse);
+
+    verify(modelMapper, times(1)).map(any(TaskRequestDTO.class), any(TaskEntity.class));
+
+    verify(modelMapper, times(1)).map(any(TaskEntity.class), eq(TaskResponseDTO.class));
+
+    verify(taskRepository, times(1)).save(any(TaskEntity.class));
+
+    verify(userServiceClient, times(3)).getUserById(anyLong(), anyString());
+    }
     // Caio chamou a responsabilidade. ???????
     // uefa cristiano caio é isso e acabo
 }
