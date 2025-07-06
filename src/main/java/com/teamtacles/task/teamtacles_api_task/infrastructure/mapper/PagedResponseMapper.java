@@ -34,7 +34,7 @@ public class PagedResponseMapper {
         );
     }
 
-    // NOVO MÉTODO: Sobrecarga que aceita uma função de mapeamento customizada
+    // Sobrecarga que aceita uma função de mapeamento customizada
     public <S, T> PagedResponse<T> toPagedResponse(Page<S> sourcePage, Function<S, T> converter) {
         List<T> mappedContent = sourcePage.getContent()
                 .stream()
