@@ -936,7 +936,7 @@ void updateStatus_shouldThrowResourceNotFoundException_whenTaskDoesNotBelongToPr
     when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
 
 
-    // === ACT & ASSERT ===
+    //  ACT & ASSERT 
     ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
         taskService.updateStatus(differentProjectId, taskId, patchDTO, adminId, adminRoles, fakeToken);
     });
@@ -947,47 +947,238 @@ void updateStatus_shouldThrowResourceNotFoundException_whenTaskDoesNotBelongToPr
 } 
 
 @Test
-@DisplayName("6.1: Admin should update task details successfully")
-void updateTask_shouldUpdateDetails_whenUserIsAdmin() {
-    //  ARRANGE 
+@DisplayName("6.2: Task owner should update task details successfully")
+void updateTask_shouldUpdateDetails_whenUserIsOwner() {
+    //  Arrange 
     Long taskId = 1L;
     Long projectId = 100L;
-    Long adminId = 1L;
-    Long responsibleId = 3L;
+    Long ownerId = 2L;
+    Long newResponsibleId = 3L;
 
     TaskRequestDTO requestDTO = new TaskRequestDTO();
-    requestDTO.setTitle("Updated Title by Admin");
-    requestDTO.setDescription("Updated Description");
-    requestDTO.setUsersResponsability(List.of(responsibleId));
-    requestDTO.setDueDate(LocalDateTime.now().plusDays(10));
+    requestDTO.setTitle("Updated Title by Owner");
+    requestDTO.setUsersResponsability(List.of(newResponsibleId));
 
     when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
 
-    when(userServiceClient.getUserById(eq(responsibleId), anyString())).thenReturn(responsibleUserDto);
-    
+    when(userServiceClient.getUserById(eq(3L), anyString())).thenReturn(responsibleUserDto);
+
     doNothing().when(modelMapper).map(any(TaskRequestDTO.class), any(TaskEntity.class));
 
-    when(modelMapper.map(any(TaskEntity.class), eq(TaskResponseDTO.class))).thenReturn(new TaskResponseDTO());
-
     when(taskRepository.save(any(TaskEntity.class))).thenReturn(existingTaskEntity);
+
+    when(modelMapper.map(any(TaskEntity.class), eq(TaskResponseDTO.class))).thenReturn(new TaskResponseDTO());
     when(userServiceClient.getUserById(eq(2L), anyString())).thenReturn(normalUserDto);
-    
-    //  ACT 
-    TaskResponseDTO actualResponse = taskService.updateTask(projectId, taskId, requestDTO, adminId, adminRoles, fakeToken);
 
-   //  ASSERT 
-assertNotNull(actualResponse);
+    //  Act
+    TaskResponseDTO actualResponse = taskService.updateTask(
+        projectId, taskId, requestDTO, ownerId, userRoles, fakeToken
+    );
 
-    verify(modelMapper, times(1)).map(any(TaskRequestDTO.class), any(TaskEntity.class));
-
-    verify(modelMapper, times(1)).map(any(TaskEntity.class), eq(TaskResponseDTO.class));
+    //  Assert 
+    assertNotNull(actualResponse);
 
     verify(taskRepository, times(1)).save(any(TaskEntity.class));
+    verify(userServiceClient, times(3)).getUserById(anyLong(), anyString()); 
+}
 
-    verify(userServiceClient, times(3)).getUserById(anyLong(), anyString());
+@Test
+    @DisplayName("6.3: Responsible user should update task details successfully")
+    void updateTask_shouldUpdateDetails_whenUserIsResponsible() {
+        // Arrange
+        Long taskId = 1L;
+        Long projectId = 100L;
+        Long responsibleId = 3L; // O usuário responsável pela tarefa faz a requisição
+        Long newResponsibleId = 4L; // Ele vai reatribuir para o 'otherUser'
+
+        TaskRequestDTO requestDTO = new TaskRequestDTO();
+        requestDTO.setTitle("Updated by Responsible");
+        requestDTO.setUsersResponsability(List.of(newResponsibleId));
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+        when(userServiceClient.getUserById(eq(newResponsibleId), anyString())).thenReturn(otherUserDto);
+        when(taskRepository.save(any(TaskEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doNothing().when(modelMapper).map(any(TaskRequestDTO.class), any(TaskEntity.class));
+        when(modelMapper.map(any(TaskEntity.class), eq(TaskResponseDTO.class))).thenReturn(new TaskResponseDTO());
+        when(userServiceClient.getUserById(eq(2L), anyString())).thenReturn(normalUserDto);
+
+        // Act
+        taskService.updateTask(projectId, taskId, requestDTO, responsibleId, userRoles, fakeToken);
+
+        // Assert
+        ArgumentCaptor<TaskEntity> taskCaptor = ArgumentCaptor.forClass(TaskEntity.class);
+        verify(taskRepository).save(taskCaptor.capture());
+        TaskEntity capturedTask = taskCaptor.getValue();
+
+        assertTrue(capturedTask.getResponsibleUserIds().contains(newResponsibleId), "A nova lista de responsáveis deve conter o usuário 4.");
+        verify(userServiceClient, times(3)).getUserById(anyLong(), anyString()); 
     }
-    // Caio chamou a responsabilidade. ???????
-    // uefa cristiano caio é isso e acabo
+
+    @Test
+    @DisplayName("6.4: Should throw AccessDeniedException when unauthorized user tries to update task")
+    void updateTask_shouldThrowAccessDeniedException_whenUserIsUnauthorized() {
+        // Arrange
+        Long taskId = 1L;
+        Long projectId = 100L;
+        Long unauthorizedUserId = 4L; // 'otherUser' que não é dono nem responsável
+        TaskRequestDTO requestDTO = new TaskRequestDTO();
+        requestDTO.setTitle("Attempted Update");
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+
+        // Act & Assert
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
+            taskService.updateTask(projectId, taskId, requestDTO, unauthorizedUserId, userRoles, fakeToken);
+        });
+        assertEquals("FORBIDDEN - You do not have permission to access this task.", exception.getMessage());
+        verify(taskRepository, never()).save(any(TaskEntity.class));
+    }
+
+    @Test
+    @DisplayName("6.5: Should throw ResourceNotFoundException when task to update is not found")
+    void updateTask_shouldThrowResourceNotFoundException_whenTaskNotFound() {
+        // Arrange
+        Long nonExistentTaskId = 999L;
+        Long projectId = 100L;
+        TaskRequestDTO requestDTO = new TaskRequestDTO();
+
+        when(taskRepository.findById(nonExistentTaskId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> {
+            taskService.updateTask(projectId, nonExistentTaskId, requestDTO, adminUserDto.getUserId(), adminRoles, fakeToken);
+        });
+    }
+
+    @Test
+    @DisplayName("6.6: Should throw ResourceNotFoundException if task does not belong to project during update")
+    void updateTask_shouldThrowResourceNotFoundException_whenTaskDoesNotBelongToProject() {
+        // Arrange
+        Long taskId = 1L;
+        Long differentProjectId = 777L;
+        TaskRequestDTO requestDTO = new TaskRequestDTO();
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> {
+            taskService.updateTask(differentProjectId, taskId, requestDTO, adminUserDto.getUserId(), adminRoles, fakeToken);
+        });
+    }
+
+    @Test
+    @DisplayName("6.7: Should throw ResourceNotFoundException if a responsible user from DTO is not found")
+    void updateTask_shouldThrowResourceNotFoundException_whenResponsibleUserInDTONotFound() {
+        // Arrange
+        Long taskId = 1L;
+        Long projectId = 100L;
+        Long nonExistentUserId = 888L;
+        TaskRequestDTO requestDTO = new TaskRequestDTO();
+        requestDTO.setUsersResponsability(List.of(nonExistentUserId));
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+        // Simula que o serviço de usuário não encontrou o ID
+        when(userServiceClient.getUserById(eq(nonExistentUserId), anyString()))
+            .thenThrow(new ResourceNotFoundException("User Not Found."));
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> {
+            taskService.updateTask(projectId, taskId, requestDTO, adminUserDto.getUserId(), adminRoles, fakeToken);
+        });
+        verify(taskRepository, never()).save(any(TaskEntity.class));
+    }
+
+    @Test
+    @DisplayName("7.1: Admin should delete any task successfully")
+    void deleteTask_shouldDeleteTask_whenUserIsAdmin() {
+        // Arrange
+        Long taskId = 1L;
+        Long projectId = 100L;
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+        doNothing().when(taskRepository).delete(existingTaskEntity);
+
+        // Act
+        taskService.deleteTask(projectId, taskId, adminUserDto.getUserId(), adminRoles);
+
+        // Assert
+        verify(taskRepository, times(1)).delete(existingTaskEntity);
+    }
+
+    @Test
+    @DisplayName("7.2: Task owner should delete their own task successfully")
+    void deleteTask_shouldDeleteTask_whenUserIsOwner() {
+        // Arrange
+        Long taskId = 1L;
+        Long projectId = 100L;
+        Long ownerId = 2L; // normalUser é o dono
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+
+        // Act
+        taskService.deleteTask(projectId, taskId, ownerId, userRoles);
+
+        // Assert
+        verify(taskRepository, times(1)).delete(existingTaskEntity);
+    }
+
+    @Test
+    @DisplayName("7.3: Responsible user should delete task successfully")
+    void deleteTask_shouldDeleteTask_whenUserIsResponsible() {
+        // Arrange
+        Long taskId = 1L;
+        Long projectId = 100L;
+        Long responsibleId = 3L; // responsibleUser é responsável
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+
+        // Act
+        taskService.deleteTask(projectId, taskId, responsibleId, userRoles);
+
+        // Assert
+        verify(taskRepository, times(1)).delete(existingTaskEntity);
+    }
+
+    @Test
+    @DisplayName("7.4: Should throw AccessDeniedException when unauthorized user tries to delete task")
+    void deleteTask_shouldThrowAccessDeniedException_whenUserIsUnauthorized() {
+        // Arrange
+        Long taskId = 1L;
+        Long projectId = 100L;
+        Long unauthorizedUserId = 4L; // otherUser não tem permissão
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+
+        // Act & Assert
+        assertThrows(AccessDeniedException.class, () -> {
+            taskService.deleteTask(projectId, taskId, unauthorizedUserId, userRoles);
+        });
+        verify(taskRepository, never()).delete(any(TaskEntity.class));
+    }
+
+    @Test
+    @DisplayName("7.5: Should throw ResourceNotFoundException when task to delete is not found")
+    void deleteTask_shouldThrowResourceNotFoundException_whenTaskNotFound() {
+        // Arrange
+        Long nonExistentTaskId = 999L;
+        Long projectId = 100L;
+        when(taskRepository.findById(nonExistentTaskId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> {
+            taskService.deleteTask(projectId, nonExistentTaskId, adminUserDto.getUserId(), adminRoles);
+        });
+    }
+
+    @Test
+    @DisplayName("7.6: Should throw ResourceNotFoundException if task does not belong to project during deletion")
+    void deleteTask_shouldThrowResourceNotFoundException_whenTaskDoesNotBelongToProject() {
+        // Arrange
+        Long taskId = 1L;
+        Long differentProjectId = 777L;
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTaskEntity));
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> {
+            taskService.deleteTask(differentProjectId, taskId, adminUserDto.getUserId(), adminRoles);
+        });
+    }
 }
 
 
