@@ -22,6 +22,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * REST controller for managing task-related operations within projects in the TeamTacles application.
@@ -38,6 +40,8 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private static final Logger logger = LoggerFactory.getLogger(TaskController.class);
+
 
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
@@ -66,9 +70,11 @@ public class TaskController {
                                                       @Valid @RequestBody TaskRequestDTO taskRequestDTO,
                                                       @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
+        logger.info("Requisition to create task received for project ID: {}, user ID: {}", projectId, userId);
         List<String> roles = getRolesFromJwt(jwt);
         String token = jwt.getTokenValue();
         TaskResponseDTO response = taskService.createTask(projectId, taskRequestDTO, userId, roles, token);
+        logger.info("Task successfully created with ID: {} in project ID: {}", response.getId(), projectId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -94,9 +100,11 @@ public class TaskController {
                                                        @PathVariable Long taskId,
                                                        @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
+        logger.info("Request to GET task ID: {} from project ID: {} by user ID: {}", taskId, projectId, userId);
         List<String> roles = getRolesFromJwt(jwt);
         String token = jwt.getTokenValue();
         TaskResponseDTO response = taskService.getTasksById(projectId, taskId, userId, roles, token);
+        logger.info("Task ID: {} successfully returned for user ID: {}", taskId, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -124,9 +132,11 @@ public class TaskController {
                                                                                   Pageable pageable,
                                                                                   @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long requestingUserId = getUserIdFromJwt(jwt);
+        logger.info("Request to LIST tasks of user ID: {} in project ID: {}, requested by user ID: {}", userId, projectId, requestingUserId);
         List<String> roles = getRolesFromJwt(jwt);
         String token = jwt.getTokenValue();
         PagedResponse<TaskResponseDTO> response = taskService.getAllTasksFromUserInProject(pageable, projectId, userId, requestingUserId, roles, token);
+        logger.info("Returned {} tasks for user ID: {} in project ID: {}", response.getContent().size(), userId, projectId);
         return ResponseEntity.ok(response);
     }
 
@@ -156,9 +166,11 @@ public class TaskController {
                                                                                       Pageable pageable,
                                                                                       @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
+        logger.info("Request to SEARCH tasks by user ID: {} with filters [status={}, dueDate={}, projectId={}]", userId, status, dueDate, projectId);
         List<String> roles = getRolesFromJwt(jwt);
         String token = jwt.getTokenValue();
         PagedResponse<TaskResponseFilteredDTO> response = taskService.getAllTasksFiltered(status, dueDate, projectId, pageable, userId, roles, token);
+        logger.info(" Task search returned {} items on the current page.", response.getContent().size());
         return ResponseEntity.ok(response);
     }
 
@@ -187,9 +199,11 @@ public class TaskController {
                                                       @Valid @RequestBody TaskRequestDTO taskRequestDTO,
                                                       @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
+        logger.info("Request to UPDATE (PUT) task ID: {} in project ID: {} by user ID: {}", taskId, projectId, userId);
         List<String> roles = getRolesFromJwt(jwt);
         String token = jwt.getTokenValue();
         TaskResponseDTO response = taskService.updateTask(projectId, taskId, taskRequestDTO, userId, roles, token);
+        logger.info("Task ID: {} successfully updated in project ID: {}", taskId, projectId);
         return ResponseEntity.ok(response);
     }
 
@@ -218,9 +232,11 @@ public class TaskController {
                                                             @Valid @RequestBody TaskRequestPatchDTO patchDTO,
                                                             @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
+        logger.info("Request to PATCH (update status) task ID: {} in project ID: {} by user ID: {}", taskId, projectId, userId);
         List<String> roles = getRolesFromJwt(jwt);
         String token = jwt.getTokenValue();
         TaskResponseDTO response = taskService.updateStatus(projectId, taskId, patchDTO, userId, roles, token);
+        logger.info("Task ID: {} status successfully updated to {}", taskId, response.getStatus());
         return ResponseEntity.ok(response);
     }
 
@@ -246,9 +262,11 @@ public class TaskController {
                                            @PathVariable Long taskId,
                                            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
+        logger.info("Request to DELETE task ID: {} from project ID: {} by user ID: {}", taskId, projectId, userId);
         List<String> roles = getRolesFromJwt(jwt);
         String token = jwt.getTokenValue();
         taskService.deleteTask(projectId, taskId, userId, roles);
+        logger.info("Task ID: {} deleted successfully from project ID: {}", taskId, projectId);
         return ResponseEntity.noContent().build();
     }
 
@@ -271,9 +289,11 @@ public class TaskController {
     public ResponseEntity<Void> deleteAllTasksFromProject(@PathVariable Long projectId,
                                            @Parameter(hidden = true) @AuthenticationPrincipal Jwt jwt) {
         Long userId = getUserIdFromJwt(jwt);
+        logger.info("Request to DELETE ALL tasks from project ID: {} by user ID: {}", projectId, userId);
         List<String> roles = getRolesFromJwt(jwt);
         String token = jwt.getTokenValue();
         taskService.deleteAllTasksFromProject(projectId, userId, roles);
+        logger.info("All tasks from project ID: {} deleted successfully by user ID: {}", projectId, userId);
         return ResponseEntity.noContent().build();
     }
 
